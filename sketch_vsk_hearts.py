@@ -1,7 +1,6 @@
 import vsketch
 from shapely.geometry import Point
 import vpype as vp
-# from bisect import bisect, insort 
 
 
 class BoundingCircle:
@@ -18,6 +17,7 @@ class VskHeartsSketch(vsketch.SketchClass):
     num_shapes = vsketch.Param(5)
     min_radius_ratio = vsketch.Param(0.05)
     max_radius_ratio = vsketch.Param(0.2)
+    max_attempts = vsketch.Param(1000)
 
     def max_radius_at_p(self, vsk: vsketch.SketchClass,
                    circles: list[BoundingCircle], point: Point):
@@ -26,6 +26,7 @@ class VskHeartsSketch(vsketch.SketchClass):
             point.x, point.y, vsk.height - point.y
         ])
 
+        # opportunity to improve performance by sorting circles by radius 
         for c in circles:
            d = point.distance(c.p) - c.r
            max_r = min(d, max_r)
@@ -49,16 +50,26 @@ class VskHeartsSketch(vsketch.SketchClass):
         self.max_radius = min(self.width, self.height) * self.max_radius_ratio / 2
         self.min_radius = min(self.width, self.height) * self.min_radius_ratio / 2
 
-        circles = []
+
         # implement your sketch here
-        for i in range(self.num_shapes):
+
+        circles = []
+        attempts = 0
+
+        ## create circles
+        while len(circles) < self.num_shapes and attempts < self.max_attempts:
             p = self.random_point(vsk)
             maybe_r = self.max_radius_at_p(vsk, circles, p)
             if maybe_r is not None:
                 c = BoundingCircle(p, maybe_r)
                 circles.append(c)
-                # insort(circles, c, key=lambda c : c.r)
-                c.draw(vsk)
+                attempts = 0
+            else:
+                attempts += 1
+
+        ## draw shapes
+        for c in circles:
+            c.draw(vsk)
 
     def finalize(self, vsk: vsketch.Vsketch) -> None:
         vsk.vpype("linemerge linesimplify reloop linesort")
