@@ -41,8 +41,8 @@ class VskHeartsSketch(vsketch.SketchClass):
         factor = 1 / vp.convert_length(scale)
         self.width, self.height = factor * vsk.width, factor * vsk.height
 
-        self.max_radius = min(self.width, self.height) * self.max_radius_ratio
-        self.min_radius = min(self.width, self.height) * self.min_radius_ratio
+        self.max_radius = min(self.width, self.height) * self.max_radius_ratio / 2
+        self.min_radius = min(self.width, self.height) * self.min_radius_ratio / 2
 
         circles = []
         # implement your sketch here
