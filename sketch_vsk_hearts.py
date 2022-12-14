@@ -22,8 +22,8 @@ class VskHeartsSketch(vsketch.SketchClass):
     def max_radius_at_p(self, vsk: vsketch.SketchClass,
                    circles: list[BoundingCircle], point: Point):
         max_r = min([
-            self.max_radius, point.x, vsk.width -
-            point.x, point.y, vsk.height - point.y
+            self.max_radius, point.x, self.width -
+            point.x, point.y, self.height - point.y
         ])
 
         # opportunity to improve performance by sorting circles by radius 
