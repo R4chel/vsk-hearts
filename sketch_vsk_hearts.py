@@ -1,10 +1,10 @@
 import vsketch
 from shapely.geometry import Point
 import vpype as vp
+# from bisect import bisect, insort 
 
 
 class BoundingCircle:
-
     def __init__(self, p, r):
         self.p = p
         self.r = r
@@ -21,13 +21,18 @@ class VskHeartsSketch(vsketch.SketchClass):
 
     def max_radius_at_p(self, vsk: vsketch.SketchClass,
                    circles: list[BoundingCircle], point: Point):
-        distances = [point.distance(c.p) - c.r for c in circles]
-        r = min(distances + [
+        max_r = min([
             self.max_radius, point.x, vsk.width -
             point.x, point.y, vsk.height - point.y
         ])
-        if r > self.min_radius:
-            return r
+
+        for c in circles:
+           d = point.distance(c.p) - c.r
+           max_r = min(d, max_r)
+           if max_r < self.min_radius:
+               break
+        if max_r > self.min_radius:
+            return max_r
         else:
             return None
 
@@ -52,6 +57,7 @@ class VskHeartsSketch(vsketch.SketchClass):
             if maybe_r is not None:
                 c = BoundingCircle(p, maybe_r)
                 circles.append(c)
+                # insort(circles, c, key=lambda c : c.r)
                 c.draw(vsk)
 
     def finalize(self, vsk: vsketch.Vsketch) -> None:
