@@ -35,6 +35,7 @@ class BoundingCircle:
     def draw(self, vsk: vsketch.SketchClass):
         vsk.circle(self.p.x, self.p.y, self.r, mode="radius")
 
+    # rotation is wrong
     def draw_heart(self, vsk: vsketch.SketchClass, heart_points):
         heart_r = self.r / 2.5
         heart_p = Point(self.p.x, self.p.y + 1.42 * heart_r)
