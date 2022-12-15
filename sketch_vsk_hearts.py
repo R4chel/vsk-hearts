@@ -1,6 +1,7 @@
 import vsketch
 from shapely.geometry import Point
 import vpype as vp
+import numpy as np
 
 
 class BoundingCircle:
@@ -11,6 +12,14 @@ class BoundingCircle:
     def draw(self, vsk: vsketch.SketchClass):
         vsk.circle(self.p.x, self.p.y, self.r, mode="radius")
 
+        def heart_f(t):
+            return np.sin(t)*np.sqrt(np.abs(np.cos(t)))/(np.sin(t)+7/5)-2*np.sin(t)+2
+
+    def draw_heart(self):
+        heart_r = self.r / 2.5 
+        heart_p = Point(self.p.x, self.p.y + 1.42 * self.heart_r)
+        
+
 
 class VskHeartsSketch(vsketch.SketchClass):
     # Sketch parameters:
@@ -18,7 +27,7 @@ class VskHeartsSketch(vsketch.SketchClass):
     min_radius_ratio = vsketch.Param(0.05)
     max_radius_ratio = vsketch.Param(0.2)
     max_attempts = vsketch.Param(1000)
-
+    
     def max_radius_at_p(self, vsk: vsketch.SketchClass,
                    circles: list[BoundingCircle], point: Point):
         max_r = min([
