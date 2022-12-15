@@ -2,6 +2,7 @@ import vsketch
 from shapely.geometry import Point, LinearRing
 import vpype as vp
 import numpy as np
+from sympy import Point2D
 
 
 class PolarPoint:
@@ -20,9 +21,16 @@ def heart_f(t):
         np.cos(t))) / (np.sin(t) + 7 / 5) - 2 * np.sin(t) + 2
 
 
+
 def heart_pts(num_points):
     thetas = [i * 2 * np.pi / num_points for i in range(num_points)]
     return [PolarPoint(theta, heart_f(theta)) for theta in thetas]
+
+def heart_pts_v2(num_points):
+    
+    thetas = [i * 2 * np.pi / num_points for i in range(num_points)]
+    polar_points = [(theta, heart_f(theta)) for theta in thetas]
+    return [Point2D(r*np.cos(theta), r*np.sin(theta)) for (theta, r) in polar_points]
 
 
 class BoundingCircle:
@@ -46,6 +54,14 @@ class BoundingCircle:
         ]
         vsk.geometry(LinearRing(pts))
 
+    def draw_heart_v2(self, vsk:vsketch.SketchClass, pts ):
+        heart_r = self.r / 2.5
+        p2D= Point2D(self.p.x,self.p.y)
+        heart_p = Point2D(self.p.x, self.p.y + 1.42 * heart_r)
+        # pts = [p.scale(x=heart_r, y=heart_r, pt=p2D) for p in pts]
+        pts = [(p.x,p.y) for p in pts]
+        print(pts)
+        # vsk.geometry(LinearRing([(p.x,p.y) for p in pts]))
 
 class VskHeartsSketch(vsketch.SketchClass):
     # Sketch parameters:
@@ -107,9 +123,12 @@ class VskHeartsSketch(vsketch.SketchClass):
                 attempts += 1
 
         heart_points = heart_pts(self.num_points)
+        heart_points_v2 = heart_pts_v2(self.num_points)
         ## draw shapes
         for c in circles:
-            c.draw_heart(vsk, heart_points)
+            c.draw(vsk)
+            # c.draw_heart(vsk, heart_points)
+            c.draw_heart_v2(vsk, heart_points_v2)
 
     def finalize(self, vsk: vsketch.Vsketch) -> None:
         vsk.vpype("linemerge linesimplify reloop linesort")
