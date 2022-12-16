@@ -9,26 +9,17 @@ def heart_f(t):
     return np.sin(t) * np.sqrt(np.abs(
         np.cos(t))) / (np.sin(t) + 7 / 5) - 2 * np.sin(t) + 2
 
-
-
 def heart_pts(num_points):
     thetas = [i * 2 * np.pi / num_points for i in range(num_points)]
     return [Point2D(a=theta, r=heart_f(theta)) for theta in thetas]
 
-def heart_pts_v2(num_points):
-    
-    thetas = [i * 2 * np.pi / num_points for i in range(num_points)]
-    polar_points = [(theta, heart_f(theta)) for theta in thetas]
-    return [Point2D(r*np.cos(theta), r*np.sin(theta)) for (theta, r) in polar_points]
-
-
-
 class BoundingCircle:
 
-    def __init__(self, p, r, rotation):
+    def __init__(self, p, r, layer, rotation):
         self.p = p
         self.r = r
         self.rotation = rotation
+        self.layer = layer
 
     def draw(self, vsk: vsketch.SketchClass):
         vsk.circle(self.p.x, self.p.y, self.r, mode="radius")
@@ -43,6 +34,7 @@ class BoundingCircle:
         for p in points:
             p.a += self.rotation
         points = [Point((p + bounding_center + diff).cartesian()) for p in points]
+        vsk.stroke(self.layer)
         vsk.geometry(LinearRing(points))
 
 class VskHeartsSketch(vsketch.SketchClass):
@@ -54,6 +46,7 @@ class VskHeartsSketch(vsketch.SketchClass):
     min_rotation = vsketch.Param(np.pi - np.pi/3)
     max_rotation = vsketch.Param(np.pi + np.pi/3)
     num_points = vsketch.Param(500)
+    num_layers = vsketch.Param(1)
 
     def max_radius_at_p(self, vsk: vsketch.SketchClass,
                         circles: list[BoundingCircle], point: Point):
@@ -90,6 +83,7 @@ class VskHeartsSketch(vsketch.SketchClass):
 
         # implement your sketch here
 
+        layers = range(1, self.num_layers + 1)
         circles = []
         attempts = 0
 
@@ -98,19 +92,18 @@ class VskHeartsSketch(vsketch.SketchClass):
             p = self.random_point(vsk)
             maybe_r = self.max_radius_at_p(vsk, circles, p)
             if maybe_r is not None:
-                c = BoundingCircle(p, maybe_r, vsk.random(self.min_rotation,self.max_rotation))
+                layer =layers[int(vsk.random(0,1) * len(layers))]
+                c = BoundingCircle(p, maybe_r, layer, vsk.random(self.min_rotation, self.max_rotation))
                 circles.append(c)
                 attempts = 0
             else:
                 attempts += 1
 
         heart_points = heart_pts(self.num_points)
-        heart_points_v2 = heart_pts_v2(self.num_points)
         ## draw shapes
         for c in circles:
-            c.draw(vsk)
+            # c.draw(vsk)
             c.draw_heart(vsk, heart_points)
-            # c.draw_heart_v2(vsk, heart_points_v2)
 
     def finalize(self, vsk: vsketch.Vsketch) -> None:
         vsk.vpype("linemerge linesimplify reloop linesort")
