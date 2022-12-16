@@ -2,18 +2,7 @@ import vsketch
 from shapely.geometry import Point, LinearRing
 import vpype as vp
 import numpy as np
-from sympy import Point2D
-
-
-class PolarPoint:
-
-    def __init__(self, theta, r):
-        self.theta = theta
-        self.r = r
-
-    def to_scaled_cartesian(self, r_scalar):
-        new_r = self.r * r_scalar
-        return Point(new_r * np.cos(self.theta), new_r * np.sin(self.theta))
+from point2d import Point2D 
 
 
 def heart_f(t):
@@ -24,13 +13,14 @@ def heart_f(t):
 
 def heart_pts(num_points):
     thetas = [i * 2 * np.pi / num_points for i in range(num_points)]
-    return [PolarPoint(theta, heart_f(theta)) for theta in thetas]
+    return [Point2D(a=theta, r=heart_f(theta)) for theta in thetas]
 
 def heart_pts_v2(num_points):
     
     thetas = [i * 2 * np.pi / num_points for i in range(num_points)]
     polar_points = [(theta, heart_f(theta)) for theta in thetas]
     return [Point2D(r*np.cos(theta), r*np.sin(theta)) for (theta, r) in polar_points]
+
 
 
 class BoundingCircle:
@@ -43,25 +33,17 @@ class BoundingCircle:
     def draw(self, vsk: vsketch.SketchClass):
         vsk.circle(self.p.x, self.p.y, self.r, mode="radius")
 
-    # rotation is wrong
     def draw_heart(self, vsk: vsketch.SketchClass, heart_points):
         heart_r = self.r / 2.5
-        heart_p = Point(self.p.x, self.p.y + 1.42 * heart_r)
-        pts = [
-            Point(heart_r * pp.r * np.cos(pp.theta + self.rotation) + heart_p.x,
-                  heart_r * pp.r * np.sin(pp.theta + self.rotation) + heart_p.y)
-            for pp in heart_points
-        ]
-        vsk.geometry(LinearRing(pts))
-
-    def draw_heart_v2(self, vsk:vsketch.SketchClass, pts ):
-        heart_r = self.r / 2.5
-        p2D= Point2D(self.p.x,self.p.y)
-        heart_p = Point2D(self.p.x, self.p.y + 1.42 * heart_r)
-        # pts = [p.scale(x=heart_r, y=heart_r, pt=p2D) for p in pts]
-        pts = [(p.x,p.y) for p in pts]
-        print(pts)
-        # vsk.geometry(LinearRing([(p.x,p.y) for p in pts]))
+        heart_center = Point2D(self.p.x, self.p.y + 1.42 * heart_r)
+        bounding_center= Point2D(self.p.x,self.p.y)
+        diff= heart_center - bounding_center
+        diff.a += self.rotation
+        points = [point * heart_r for point in heart_points]
+        for p in points:
+            p.a += self.rotation
+        points = [Point((p + bounding_center + diff).cartesian()) for p in points]
+        vsk.geometry(LinearRing(points))
 
 class VskHeartsSketch(vsketch.SketchClass):
     # Sketch parameters:
@@ -127,8 +109,8 @@ class VskHeartsSketch(vsketch.SketchClass):
         ## draw shapes
         for c in circles:
             c.draw(vsk)
-            # c.draw_heart(vsk, heart_points)
-            c.draw_heart_v2(vsk, heart_points_v2)
+            c.draw_heart(vsk, heart_points)
+            # c.draw_heart_v2(vsk, heart_points_v2)
 
     def finalize(self, vsk: vsketch.Vsketch) -> None:
         vsk.vpype("linemerge linesimplify reloop linesort")
