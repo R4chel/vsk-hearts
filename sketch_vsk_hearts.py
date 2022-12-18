@@ -133,8 +133,11 @@ class VskHeartsSketch(vsketch.SketchClass):
         for c in circles:
             # c.draw(vsk)
             # c.draw_heart(vsk, heart_points)
+            # variable names are lies
             num_star_points = int(
-                vsk.random(self.min_star_points, self.max_star_points + 1))
+                abs(vsk.randomGaussian()) *
+                (self.max_star_points - self.min_star_points) +
+                self.min_star_points)
             star_points = star_pts(num_star_points)
             c.draw_star(vsk, star_points)
 
