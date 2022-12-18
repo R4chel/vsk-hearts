@@ -127,6 +127,7 @@ class VskHeartsSketch(vsketch.SketchClass):
             else:
                 attempts += 1
 
+        print("num circles:", len(circles))
         heart_points = heart_pts(self.num_points)
         ## draw shapes
         for c in circles:
