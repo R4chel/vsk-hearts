@@ -1,26 +1,9 @@
 import vsketch
-from shapely.geometry import Point, LinearRing
+from shapely.geometry import Point, LinearRing, LineString
 import vpype as vp
 import numpy as np
 from point2d import Point2D
 import bisect
-
-
-def heart_f(t):
-    return np.sin(t) * np.sqrt(np.abs(
-        np.cos(t))) / (np.sin(t) + 7 / 5) - 2 * np.sin(t) + 2
-
-
-def heart_pts(num_points):
-    thetas = [i * 2 * np.pi / num_points for i in range(num_points)]
-    return [Point2D(a=theta, r=heart_f(theta)) for theta in thetas]
-
-
-def star_pts(n):
-    return [
-        Point2D(a=(i * np.pi / n), r=(1 if i % 2 == 0 else 0.5))
-        for i in range(n * 2)
-    ]
 
 
 class BoundingCircle:
@@ -34,42 +17,33 @@ class BoundingCircle:
     def draw(self, vsk: vsketch.SketchClass):
         vsk.circle(self.p.x, self.p.y, self.r, mode="radius")
 
-    def draw_heart(self, vsk: vsketch.SketchClass, heart_points):
-        heart_r = self.r / 2.5
-        heart_center = Point2D(self.p.x, self.p.y + 1.42 * heart_r)
-        bounding_center = Point2D(self.p.x, self.p.y)
-        diff = heart_center - bounding_center
-        diff.a += self.rotation
-        points = [point * heart_r for point in heart_points]
-        for p in points:
-            p.a += self.rotation
-        points = [
-            Point((p + bounding_center + diff).cartesian()) for p in points
+    def draw_spiral(self, vsk: vsketch.SketchClass, a, b, f, g, num_points,
+                    increments):
+        thetas = [i * 2 * np.pi / increments for i in range(num_points)]
+        pts = [
+            Point2D(a=theta, r=((a + b * theta) * (1 + f * np.sin(g * theta))))
+            for theta in thetas
         ]
-        vsk.stroke(self.layer)
-        vsk.geometry(LinearRing(points))
-
-    def draw_star(self, vsk: vsketch.SketchClass, star_points):
-        pts = [p * self.r for p in star_points]
-        for p in pts:
-            p.a += self.rotation
         points = [Point((p + self.p).cartesian()) for p in pts]
         vsk.stroke(self.layer)
-        vsk.geometry(LinearRing(points))
+        vsk.geometry(LineString(points))
 
 
 class VskHeartsSketch(vsketch.SketchClass):
     # Sketch parameters:
     num_shapes = vsketch.Param(5)
+    a = vsketch.Param(1.)
+    b = vsketch.Param(2.)
+    f = vsketch.Param(1.)
+    g = vsketch.Param(2.)
+    num_points = vsketch.Param(200)
+    increments = vsketch.Param(10)
     min_radius_ratio = vsketch.Param(0.05)
     max_radius_ratio = vsketch.Param(0.2)
     max_attempts = vsketch.Param(1000)
     min_rotation = vsketch.Param(np.pi - np.pi / 3)
     max_rotation = vsketch.Param(np.pi + np.pi / 3)
-    num_points = vsketch.Param(500)
     num_layers = vsketch.Param(1)
-    min_star_points = vsketch.Param(8)
-    max_star_points = vsketch.Param(8)
 
     def max_radius_at_p(self, vsk: vsketch.SketchClass,
                         circles: list[BoundingCircle], point: Point):
@@ -128,18 +102,11 @@ class VskHeartsSketch(vsketch.SketchClass):
                 attempts += 1
 
         print("num circles:", len(circles))
-        heart_points = heart_pts(self.num_points)
+
         ## draw shapes
         for c in circles:
-            # c.draw(vsk)
-            # c.draw_heart(vsk, heart_points)
-            # variable names are lies
-            num_star_points = int(
-                abs(vsk.randomGaussian()) *
-                (self.max_star_points - self.min_star_points) +
-                self.min_star_points)
-            star_points = star_pts(num_star_points)
-            c.draw_star(vsk, star_points)
+            c.draw_spiral(vsk, self.a, self.b, self.f, self.g, self.num_points,
+                          self.increments)
 
     def finalize(self, vsk: vsketch.Vsketch) -> None:
         vsk.vpype("linemerge linesimplify reloop linesort")
