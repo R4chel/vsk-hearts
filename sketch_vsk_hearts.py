@@ -21,7 +21,8 @@ class BoundingCircle:
                     increments):
         thetas = [i * 2 * np.pi / increments for i in range(num_points)]
         pts = [
-            Point2D(a=theta, r=((a + b * theta) * (1 + f * np.sin(g * theta))))
+            Point2D(a=theta,
+                    r=((a + b * theta) * (1 + f * np.sin(g * theta) * self.r)))
             for theta in thetas
         ]
         points = [Point((p + self.p).cartesian()) for p in pts]
