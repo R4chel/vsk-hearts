@@ -67,7 +67,7 @@ class VskHeartsSketch(vsketch.SketchClass):
         return Point2D(vsk.random(0, self.width), vsk.random(0, self.height))
 
     def draw(self, vsk: vsketch.Vsketch) -> None:
-        vsk.size("a6", landscape=True)
+        vsk.size("5inx7in", landscape=True)
         scale = "mm"
         vsk.scale(scale)
         factor = 1 / vp.convert_length(scale)
